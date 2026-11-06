@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NKGen AI - Süni İntellektlə Vebsayt Konstruktoru</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-dark: #0b0f19;
+    --card-bg: #151c2c;
+    --card-border: #232d42;
+    --orange-primary: #f97316;
+    --orange-hover: #ea580c;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+
+header {
+    background: rgba(21, 28, 44, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--card-border);
+    padding: 12px 24px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.logo span { color: var(--orange-primary); }
+.header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.dashboard { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px; flex: 1; min-height: 0; }
+
+.sidebar {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px;
+    padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+    max-height: calc(100vh - 100px);
+}
+.section-title {
+    font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--orange-primary);
+    letter-spacing: 0.8px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.sidebar textarea {
+    width: 100%; height: 110px; background: #0b0f19; border: 1px solid var(--card-border);
+    border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; resize: none; outline: none; transition: border 0.2s;
+}
+.sidebar textarea:focus { border-color: var(--orange-primary); }
+hr { border: 0; border-top: 1px solid var(--card-border); }
+
+.btn-orange {
+    background: var(--orange-primary); color: #fff; border: none; padding: 12px 20px; border-radius: 10px;
+    font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 8px; transition: all 0.2s; width: 100%; font-size: 14px;
+}
+.btn-orange:hover:not(:disabled) { background: var(--orange-hover); transform: translateY(-1px); }
+.btn-orange:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary {
+    background: #1e293b; color: var(--text-main); border: 1px solid var(--card-border); padding: 10px 15px;
+    border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    font-size: 13px; transition: all 0.2s;
+}
+.btn-secondary:hover { background: #334155; }
+
+.chip-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.chip {
+    background: #1e293b; border: 1px solid var(--card-border); color: var(--text-main);
+    padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;
+}
+.chip:hover { border-color: var(--orange-primary); color: var(--orange-primary); }
+
+.preview-area {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px;
+    display: flex; flex-direction: column; overflow: hidden; min-height: 600px;
+    height: calc(100vh - 100px);
+}
+.preview-toolbar {
+    background: #0f172a; padding: 12px 20px; border-bottom: 1px solid var(--card-border);
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.view-tabs, .device-selector { display: flex; background: #1e293b; padding: 4px; border-radius: 8px; gap: 4px; }
+.view-btn, .device-btn {
+    background: transparent; border: none; color: var(--text-muted); padding: 6px 14px; border-radius: 6px;
+    cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+}
+.view-btn.active, .device-btn.active { background: var(--orange-primary); color: #fff; }
+
+.workspace-content { flex: 1; position: relative; display: flex; overflow: hidden; min-height: 0; }
+.view-pane { position: absolute; inset: 0; display: none; background: #090d16; }
+.view-pane.active { display: flex; flex-direction: column; }
+.preview-frame-wrapper {
+    flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: auto; background: #000;
+}
+iframe#livePreviewFrame { background: #fff; border: none; transition: all 0.3s ease; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
+iframe.desktop { width: 100%; height: 100%; border-radius: 8px; border: 1px solid var(--card-border); }
+iframe.tablet {
+    width: 768px; max-width: 100%; height: 100%; max-height: 950px; border-radius: 24px;
+    border: 12px solid #1e293b; box-shadow: 0 25px 60px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5);
+}
+iframe.mobile {
+    width: 380px; max-width: 100%; height: 100%; max-height: 750px; border-radius: 36px;
+    border: 14px solid #1e293b; outline: 2px solid #334155;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.85), inset 0 0 12px rgba(0,0,0,0.6);
+}
+#codeEditorTextarea {
+    width: 100%; height: 100%; background: #0b0f19; color: #38bdf8; border: none; padding: 20px;
+    font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; resize: none; outline: none; overflow: auto;
+}
+
+.loading-overlay {
+    position: absolute; inset: 0; background: rgba(11, 15, 25, 0.88); display: none; flex-direction: column;
+    justify-content: center; align-items: center; gap: 15px; z-index: 20; text-align: center; padding: 20px;
+}
+.loading-overlay.show { display: flex; }
+.spinner {
+    width: 45px; height: 45px; border: 4px solid rgba(249, 115, 22, 0.2); border-top: 4px solid var(--orange-primary);
+    border-radius: 50%; animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-weight: 700; color: var(--text-main); }
+.loading-hint { font-size: 12px; color: var(--text-muted); }
+.btn-cancel { margin-top: 6px; width: auto; padding: 8px 18px; background: #334155; }
+
+
+.user-nav-section { display: flex; align-items: center; gap: 12px; }
+.auth-buttons { display: flex; gap: 8px; align-items: center; }
+.auth-buttons .btn-orange { width: auto; padding: 10px 16px; font-size: 13px; }
+.user-profile-box { position: relative; display: none; align-items: center; gap: 10px; }
+.credit-badge {
+    background: rgba(255, 107, 0, 0.15); border: 1px solid rgba(255, 107, 0, 0.4); color: #FF6B00;
+    padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+}
+.user-avatar {
+    width: 36px; height: 36px; border-radius: 50%; background: #FF6B00; color: #fff; display: flex;
+    align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none;
+}
+.user-dropdown {
+    display: none; position: absolute; top: 45px; right: 0; width: 220px; background: #181920;
+    border: 1px solid #2a2b36; border-radius: 10px; padding: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1000;
+}
+.user-dropdown.show { display: block; }
+.u-name { margin: 0; font-weight: 600; color: #fff; font-size: 14px; }
+.u-email { margin: 2px 0 0 0; font-size: 11px; color: #888; word-break: break-all; }
+.user-dropdown hr { border-top: 1px solid #2a2b36; margin: 8px 0; }
+.dropdown-item {
+    width: 100%; background: none; border: none; color: #ccc; text-align: left; padding: 8px 10px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s;
+}
+.dropdown-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.dropdown-item.logout:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px);
+    display: none; justify-content: center; align-items: center; z-index: 9999; padding: 15px;
+}
+.modal-overlay.show { display: flex; }
+.modal-card {
+    background: #14151c; border: 1px solid #2a2b3a; border-radius: 16px; width: 100%; max-width: 440px;
+    padding: 25px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-height: 92vh; overflow-y: auto;
+}
+.modal-card h3 { color: var(--orange-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.modal-card p.desc { color: var(--text-muted); font-size: 14px; margin-bottom: 18px; }
+.modal-card .btn-secondary { width: 100%; margin-top: 10px; justify-content: center; }
+.close-modal-btn { position: absolute; top: 12px; right: 15px; background: none; border: none; color: #888; font-size: 24px; cursor: pointer; }
+.choice {
+    background: #2a2a40; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 1px solid #3d3d5c; transition: 0.2s;
+}
+.choice:hover { border-color: var(--orange-primary); }
+.choice small { display: block; font-size: 12px; margin-top: 4px; }
+.auth-tabs { display: flex; background: #0f1016; padding: 4px; border-radius: 8px; margin-bottom: 20px; }
+.auth-tab-btn { flex: 1; background: none; border: none; color: #888; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.auth-tab-btn.active { background: #222431; color: #fff; }
+.input-group { margin-bottom: 15px; text-align: left; }
+.input-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 6px; }
+.input-group input {
+    width: 100%; padding: 10px; background: #0f1016; border: 1px solid #2a2b3a; border-radius: 8px; color: #fff;
+}
+.input-group input:focus { outline: none; border-color: var(--orange-primary); }
+.full-width { width: 100%; padding: 12px; margin-top: 10px; }
+.form-error { color: #ef4444; font-size: 12px; margin-bottom: 8px; min-height: 16px; }
+.price-card { background: #1b1d29; border: 1px solid #2a2b3a; border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.price-card strong { font-size: 15px; }
+.price-card small { color: var(--text-muted); display: block; margin-top: 2px; }
+
+.toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1e293b; border: 1px solid var(--card-border); color: #fff; padding: 12px 20px; border-radius: 10px;
+    font-size: 13px; opacity: 0; pointer-events: none; transition: all 0.3s; z-index: 10000; max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: #ef4444; }
+.toast.success { border-color: #10B981; }
+
+@media (max-width: 900px) {
+    .dashboard { grid-template-columns: 1fr; }
+    .sidebar { max-height: none; }
+    .preview-area { height: 650px; }
+    header { padding: 10px 14px; }
+}
+</style>
+</head>
+<body>
+
+
+<header>
+    <div class="logo">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--orange-primary);"></i>
+        NKGen <span>AI</span>
+    </div>
+
+    <div class="header-right">
+        <select id="langSelector" style="background:#1e293b;color:#fff;border:1px solid var(--card-border);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px;">
+            <option value="az">Azərbaycanca</option>
+            <option value="tr">Türkçe</option>
+            <option value="en">English</option>
+        </select>
+
+        <button type="button" class="btn-secondary" id="btnDemo"><i class="fa-solid fa-cubes"></i> <span data-i18n="demo"></span></button>
+        <button type="button" class="btn-secondary" id="btnExportTop"><i class="fa-solid fa-download"></i> <span data-i18n="export"></span></button>
+
+        <div class="user-nav-section">
+            <div id="authButtons" class="auth-buttons">
+                <button type="button" class="btn-secondary" id="btnOpenLogin" data-i18n="login"></button>
+                <button type="button" class="btn-orange" id="btnOpenRegister" data-i18n="register"></button>
+            </div>
+
+            <div id="userProfile" class="user-profile-box">
+                <div class="credit-badge">⚡ <span id="userCredits">0</span> <span data-i18n="credit"></span></div>
+                <div class="user-avatar" id="userAvatar"><span id="userInitial">U</span></div>
+                <div id="userDropdown" class="user-dropdown">
+                    <div>
+                        <p id="userNameDisplay" class="u-name"></p>
+                        <p id="userEmailDisplay" class="u-email"></p>
+                    </div>
+                    <hr>
+                    <button type="button" class="dropdown-item" id="btnBuyCredit">⚡ <span data-i18n="buyCredit"></span></button>
+                    <button type="button" class="dropdown-item logout" id="btnLogout">🚪 <span data-i18n="logout"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+<div class="dashboard">
+    <div class="sidebar">
+        <div>
+            <div class="section-title"><i class="fa-solid fa-pen-nib"></i> <span data-i18n="promptTitle"></span></div>
+
+            <div class="chip-row">
+                <button type="button" class="chip" data-prompt="promptEcom">🛍️ <span data-i18n="catEcom"></span></button>
+                <button type="button" class="chip" data-prompt="promptRest">🍔 <span data-i18n="catRest"></span></button>
+                <button type="button" class="chip" data-prompt="promptServ">💼 <span data-i18n="catServ"></span></button>
+            </div>
+
+            <textarea id="websitePrompt" data-i18n-ph="promptPh"></textarea>
+
+            <button type="button" class="btn-orange" style="margin-top:10px;" id="mainGenerateBtn">
+                <i class="fa-solid fa-bolt"></i> <span id="btnGenText" data-i18n="gen"></span>
+            </button>
+            <button type="button" class="btn-orange" style="margin-top:10px;background:#10B981;" id="btnDeploy">
+                <i class="fa-solid fa-globe"></i> <span data-i18n="deploy"></span>
+            </button>
+        </div>
+
+        <hr>
+
+        <div>
+            <div class="section-title"><i class="fa-solid fa-robot"></i> <span data-i18n="copilotTitle"></span></div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;" data-i18n="copilotDesc"></p>
+            <textarea id="copilotPrompt" style="height:80px;" data-i18n-ph="copilotPh"></textarea>
+            <button type="button" class="btn-orange" style="margin-top:10px;background:#3b82f6;" id="btnCopilot">
+                <i class="fa-solid fa-wand-magic"></i> <span id="btnCopilotText" data-i18n="copilotBtn"></span>
+            </button>
+        </div>
+
+        <hr>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            <button type="button" class="btn-secondary" id="btnCopy"><i class="fa-solid fa-copy"></i> <span data-i18n="copy"></span></button>
+            <button type="button" class="btn-secondary" id="btnExportModal"><i class="fa-solid fa-file-export"></i> <span data-i18n="exportModal"></span></button>
+        </div>
+    </div>
+
+    <div class="preview-area">
+        <div class="preview-toolbar">
+            <div class="view-tabs">
+                <button type="button" class="view-btn active" data-view="preview"><i class="fa-solid fa-eye"></i> <span data-i18n="tabPreview"></span></button>
+                <button type="button" class="view-btn" data-view="code"><i class="fa-solid fa-code"></i> <span data-i18n="tabCode"></span></button>
+            </div>
+
+            <div class="device-selector" id="deviceSelectorWrapper">
+                <button type="button" class="device-btn active" data-device="desktop"><i class="fa-solid fa-desktop"></i> <span data-i18n="devDesktop"></span></button>
+                <button type="button" class="device-btn" data-device="tablet"><i class="fa-solid fa-tablet-screen-button"></i> <span data-i18n="devTablet"></span></button>
+                <button type="button" class="device-btn" data-device="mobile"><i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="devMobile"></span></button>
+            </div>
+        </div>
+
+        <div class="workspace-content">
+            <div id="panePreview" class="view-pane active">
+                <div class="preview-frame-wrapper">
+                    <iframe id="livePreviewFrame" class="desktop" sandbox="allow-scripts allow-modals allow-popups allow-forms"></iframe>
+                </div>
+            </div>
+
+            <div id="paneCode" class="view-pane">
+                <textarea id="codeEditorTextarea" spellcheck="false"></textarea>
+            </div>
+
+            <div id="loadingOverlay" class="loading-overlay">
+                <div class="spinner"></div>
+                <div class="loading-text"><span id="loadingMessageText"></span> (<span id="timerCount">0</span> <span data-i18n="sec"></span>)</div>
+                <div class="loading-hint" data-i18n="loadingHint"></div>
+                <button type="button" class="btn-secondary btn-cancel" id="btnCancelGen" data-i18n="cancel"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="deployModal" class="modal-overlay">
+    <div class="modal-card">
+        <button type="button" class="close-modal-btn" data-close="deployModal">&times;</button>
+        <h3><i class="fa-solid fa-globe"></i> <span data-i18n="deployTitle"></span></h3>
+        <p class="desc" data-i18n="deployDesc"></p>
+        <div class="choice" id="choiceQuick">
+            <strong>🚀 <span data-i18n="quickTitle"></span></strong>
+            <small style="color:#10B981;" data-i18n="quickSub"></small>
+        </div>
+        <div class="choice" id="choiceCustom">
+            <strong>🌐 <span data-i18n="customTitle"></span></strong>
+            <small style="color:#3B82F6;" data-i18n="customSub"></small>
+        </div>
+        <button type="button" class="btn-secondary" data-close="deployModal" data-i18n="close"></button>
+    </div>
+</div>
+
+
+<div id="demoModal" class="modal-overlay">
+    <div class="modal-card">
+        <button type="button" class="close-modal-btn" data-close="demoModal">&times;</button>
+        <h3><i class="fa-solid fa-cubes"></i> <span data-i18n="demo"></span></h3>
+        <p class="desc" data-i18n="demoDesc"></p>
+        <button type="button" class="btn-orange" id="btnLoadDemo" data-i18n="demoLoad"></button>
+        <button type="button" class="btn-secondary" data-close="demoModal" data-i18n="close"></button>
+    </div>
+</div>
+
+
+<div id="exportModal" class="modal-overlay">
+    <div class="modal-card">
+        <button type="button" class="close-modal-btn" data-close="exportModal">&times;</button>
+        <h3><i class="fa-solid fa-file-export"></i> <span data-i18n="exportTitle"></span></h3>
+        <p class="desc" data-i18n="exportDesc"></p>
+        <button type="button" class="btn-orange" id="btnExportFile"><i class="fa-solid fa-download"></i> <span data-i18n="exportHtml"></span></button>
+        <button type="button" class="btn-secondary" id="btnExportCopy"><i class="fa-solid fa-copy"></i> <span data-i18n="copy"></span></button>
+        <button type="button" class="btn-secondary" data-close="exportModal" data-i18n="cancel"></button>
+    </div>
+</div>
+
+<div id="pricingModal" class="modal-overlay">
+    <div class="modal-card">
+        <button type="button" class="close-modal-btn" data-close="pricingModal">&times;</button>
+        <h3>⚡ <span data-i18n="pricingTitle"></span></h3>
+        <p class="desc" data-i18n="pricingDesc"></p>
+        <div class="price-card"><div><strong>10 <span data-i18n="credit"></span></strong><small>Starter</small></div><button type="button" class="btn-orange" style="width:auto;padding:8px 16px;" data-buy="10">5 AZN</button></div>
+        <div class="price-card"><div><strong>50 <span data-i18n="credit"></span></strong><small>Pro</small></div><button type="button" class="btn-orange" style="width:auto;padding:8px 16px;" data-buy="50">20 AZN</button></div>
+        <div class="price-card"><div><strong>150 <span data-i18n="credit"></span></strong><small>Business</small></div><button type="button" class="btn-orange" style="width:auto;padding:8px 16px;" data-buy="150">50 AZN</button></div>
+        <button type="button" class="btn-secondary" data-close="pricingModal" data-i18n="close"></button>
+    </div>
+</div>
+
+
+<div id="authModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:380px;">
+        <button type="button" class="close-modal-btn" data-close="authModal">&times;</button>
+        <div class="auth-tabs">
+            <button type="button" id="tabLogin" class="auth-tab-btn active" data-i18n="loginTab"></button>
+            <button type="button" id="tabRegister" class="auth-tab-btn" data-i18n="register"></button>
+        </div>
+
+        <form id="loginForm" novalidate>
+            <div class="input-group"><label data-i18n="email"></label><input type="email" id="loginEmail" placeholder="numune@mail.com" autocomplete="email"></div>
+            <div class="input-group"><label data-i18n="password"></label><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"></div>
+            <div class="form-error" id="loginError"></div>
+            <button type="submit" class="btn-orange full-width" data-i18n="doLogin"></button>
+        </form>
+
+        <form id="registerForm" style="display:none;" novalidate>
+            <div class="input-group"><label data-i18n="fullName"></label><input type="text" id="regName" placeholder="Ad Soyad" autocomplete="name"></div>
+            <div class="input-group"><label data-i18n="email"></label><input type="email" id="regEmail" placeholder="numune@mail.com" autocomplete="email"></div>
+            <div class="input-group"><label data-i18n="password"></label><input type="password" id="regPassword" data-i18n-ph="pwMin" autocomplete="new-password"></div>
+            <div class="form-error" id="registerError"></div>
+            <button type="submit" class="btn-orange full-width" data-i18n="createAccount"></button>
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+
+
+/* ---------------------------------------------------------------------
+   CLAUDE API AÇARI — AŞAĞIDAKI XƏTTƏ ÖZ AÇARINIZI YAZIN
+   --------------------------------------------------------------------- */
+const CLAUDE_API_KEY = "BURAYA_CLAUDE_API_ACARINI_YAZIN";   // <-- sk-ant-... açarınızı bura qoyun
+const CLAUDE_MODEL   = "claude-sonnet-5-5";
+const CLAUDE_MAX_TOKENS = 16000;
+const REQUEST_TIMEOUT_MS = 240000;   // 4 dəqiqə
+const COPILOT_COST = 1;              // Co-Pilot neçə kredit çəkir (0 etsəniz pulsuz olur)
+const GENERATE_COST = 1;
+const FREE_CREDITS = 3;
+
+const translations = {
+  az: {
+    demo: "Demo Şablonlar", export: "Kodu Yüklə", login: "Giriş", register: "Qeydiyyat", credit: "Kredit",
+    buyCredit: "Kredit Al / PRO", logout: "Çıxış Et",
+    promptTitle: "Sayt Promptu", catEcom: "E-ticarət", catRest: "Restoran", catServ: "Xidmət",
+    promptPh: "Məsələn: Qara və narıncı mövzuda, WhatsApp sifariş düyməsi olan, avto-servis üçün müasir landing page yarat...",
+    gen: "Yeni Vebsayt Generasiya Et", genBusy: "Hazırlanır...", deploy: "İnternetdə Canlıya At (Deploy)",
+    copilotTitle: "AI Co-Pilot (Canlı Redaktə)", copilotDesc: "Hazır olan saytda istədiyiniz dəyişikliyi təsvir edin:",
+    copilotPh: "Məsələn: Arxa fonu tünd göy et, qiymət cədvəli əlavə et...", copilotBtn: "Co-Pilot Tətbiq Et",
+    copy: "Kodu Kopyala", exportModal: "İxrac Modalını Aç",
+    tabPreview: "Ön İzləmə", tabCode: "Kod Redaktoru",
+    devDesktop: "Masaüstü", devTablet: "Planşet", devMobile: "Mobil",
+    loadingGen: "NKGen AI Saytı Generasiya Edir...", loadingCopilot: "Co-Pilot Dəyişiklikləri Tətbiq Edir...",
+    loadingHint: "Mürəkkəb saytlar 1-2 dəqiqə çəkə bilər.", sec: "san", cancel: "Ləğv Et", close: "Bağla",
+    welcomeTitle: "NKGen AI Ön İzləmə Mərkəzi", welcomeDesc: "Sol paneldən prompt yazın və ya şablon seçərək vebsaytınızı yaradın.",
+    welcomeStatus: "● Sistem Hazırdır & Gözləyir",
+    promptEcom: "Geyim satışı üçün müasir e-ticarət saytı və məhsul kartları düzəlt",
+    promptRest: "Restoran üçün onlayn menyu və sifariş səhifəsi düzəlt",
+    promptServ: "Xidmət satışı üçün landinq səhifəsi və qiymət cədvəli düzəlt",
+    enterPrompt: "Zəhmət olmasa vebsayt haqqında məlumat daxil edin!",
+    enterCopilot: "Co-Pilot üçün təlimat yazın!", noSite: "Əvvəlcə bir vebsayt generasiya edin!",
+    needLogin: "Davam etmək üçün əvvəlcə daxil olun və ya qeydiyyatdan keçin.",
+    noCredit: "Kreditiniz bitib! Davam etmək üçün yeni kredit paketi alın.",
+    noKey: "Claude API açarı təyin edilməyib. Faylın script hissəsində CLAUDE_API_KEY dəyişəninə açarınızı yazın.",
+    genError: "Generasiya zamanı xəta baş verdi: ", cancelled: "Əməliyyat ləğv edildi. Kredit geri qaytarıldı.",
+    timeout: "Sorğu çox uzun çəkdi (timeout). Kredit geri qaytarıldı.", truncated: "Diqqət: cavab uzunluq limitinə çatdı, sayt yarımçıq ola bilər.",
+    emptyResp: "API boş cavab qaytardı.", copied: "Saytın HTML kodu kopyalandı!", copyFail: "Kopyalama alınmadı. Kodu redaktordan əl ilə seçin.",
+    welcomeUser: "Xoş gəldiniz {name}! Sizə {n} pulsuz generasiya krediti əlavə olundu.", loggedOut: "Çıxış edildi.",
+    deployTitle: "Saytı Canlıya Çıxar", deployDesc: "Saytınızı internetdə yerləşdirmək üçün hansı üsulu seçmək istəyirsiniz?",
+    quickTitle: "Sürətli Pulsuz Link", quickSub: "Sub-domen (.netlify.app) + Pulsuz SSL",
+    customTitle: "Peşəkar Domen (.com / .az)", customSub: "Kodu yüklə və cPanel/Hostinqinə at",
+    quickAlert: "Fayl yükləndi! Açılan səhifəyə (Netlify Drop) atın və dərhal pulsuz link əldə edin.",
+    customAlert: "index.html yükləndi! Öz domeninizdə işlətmək üçün faylı hostinqin public_html qovluğuna yükləyin və SSL-i aktivləşdirin.",
+    demoDesc: "Bir kliklə hazır şablonu yükləyin:", demoLoad: "Auto-Service Pro Şablonunu Yüklə",
+    exportTitle: "İxrac Seçimləri", exportDesc: "Vebsayt kodunuz hazırdır.", exportHtml: ".HTML Faylı Olaraq Yüklə",
+    pricingTitle: "Kredit Al", pricingDesc: "Kredit paketi seçin.", buyNotReady: "Ödəniş sistemi hələ qoşulmayıb. Ödəniş üçün server (backend) inteqrasiyası lazımdır.",
+    loginTab: "Giriş Et", email: "E-poçt", password: "Şifrə", fullName: "Ad və Soyad", pwMin: "Minimum 6 simvol",
+    doLogin: "Daxil Ol", createAccount: "Hesab Yarat (3 Pulsuz Kredit Qazan)",
+    errFields: "Bütün xanaları doldurun.", errEmail: "E-poçt düzgün deyil.", errPw: "Şifrə minimum 6 simvol olmalıdır.",
+    errExists: "Bu e-poçt artıq qeydiyyatdan keçib.", errCreds: "E-poçt və ya şifrə yanlışdır."
+  },
+  tr: {
+    demo: "Demo Şablonlar", export: "Kodu İndir", login: "Giriş", register: "Kayıt Ol", credit: "Kredi",
+    buyCredit: "Kredi Al / PRO", logout: "Çıkış Yap",
+    promptTitle: "Site Komutu", catEcom: "E-Ticaret", catRest: "Restoran", catServ: "Hizmet",
+    promptPh: "Örnek: Siyah ve turuncu temalı, WhatsApp sipariş butonlu, oto servis için modern bir landing page oluştur...",
+    gen: "Yeni Web Sitesi Oluştur", genBusy: "Hazırlanıyor...", deploy: "İnternette Yayınla (Deploy)",
+    copilotTitle: "AI Co-Pilot (Canlı Düzenleme)", copilotDesc: "Mevcut sitede yapılmasını istediğiniz değişikliği tanımlayın:",
+    copilotPh: "Örnek: Arka planı koyu mavi yap, fiyat tablosu ekle...", copilotBtn: "Co-Pilot Uygula",
+    copy: "Kodu Kopyala", exportModal: "Dışa Aktarma Penceresi",
+    tabPreview: "Önizleme", tabCode: "Kod Düzenleyici",
+    devDesktop: "Masaüstü", devTablet: "Tablet", devMobile: "Mobil",
+    loadingGen: "NKGen AI Web Sitesini Oluşturuyor...", loadingCopilot: "Co-Pilot Değişiklikleri Uyguluyor...",
+    loadingHint: "Karmaşık siteler 1-2 dakika sürebilir.", sec: "sn", cancel: "İptal", close: "Kapat",
+    welcomeTitle: "NKGen AI Önizleme Merkezi", welcomeDesc: "Sol panelden komut yazın veya bir şablon seçerek web sitenizi oluşturun.",
+    welcomeStatus: "● Sistem Hazır & Bekliyor",
+    promptEcom: "Giyim satışı için modern e-ticaret sitesi ve ürün kartları oluştur",
+    promptRest: "Restoran için online menü ve sipariş sayfası oluştur",
+    promptServ: "Hizmet satışı için açılış sayfası ve fiyat tablosu oluştur",
+    enterPrompt: "Lütfen web sitesi hakkında bilgi girin!",
+    enterCopilot: "Co-Pilot için bir talimat yazın!", noSite: "Önce bir web sitesi oluşturun!",
+    needLogin: "Devam etmek için önce giriş yapın veya kayıt olun.",
+    noCredit: "Krediniz bitti! Devam etmek için yeni kredi paketi alın.",
+    noKey: "Claude API anahtarı ayarlanmamış. Dosyanın script bölümünde CLAUDE_API_KEY değişkenine anahtarınızı yazın.",
+    genError: "Oluşturma sırasında hata oluştu: ", cancelled: "İşlem iptal edildi. Kredi iade edildi.",
+    timeout: "İstek çok uzun sürdü (timeout). Kredi iade edildi.", truncated: "Dikkat: yanıt uzunluk sınırına ulaştı, site eksik olabilir.",
+    emptyResp: "API boş yanıt döndürdü.", copied: "Sitenin HTML kodu kopyalandı!", copyFail: "Kopyalanamadı. Kodu editörden elle seçin.",
+    welcomeUser: "Hoş geldiniz {name}! {n} ücretsiz oluşturma kredisi eklendi.", loggedOut: "Çıkış yapıldı.",
+    deployTitle: "Siteyi Yayınla", deployDesc: "Sitenizi internette yayınlamak için hangi yöntemi seçmek istersiniz?",
+    quickTitle: "Hızlı Ücretsiz Link", quickSub: "Alt alan adı (.netlify.app) + Ücretsiz SSL",
+    customTitle: "Profesyonel Alan Adı (.com / .az)", customSub: "Kodu indir ve cPanel/hosting'e yükle",
+    quickAlert: "Dosya indirildi! Açılan sayfaya (Netlify Drop) bırakıp hemen ücretsiz link alın.",
+    customAlert: "index.html indirildi! Kendi alan adınızda kullanmak için dosyayı hosting'in public_html klasörüne yükleyin ve SSL'i etkinleştirin.",
+    demoDesc: "Tek tıkla hazır şablonu yükleyin:", demoLoad: "Auto-Service Pro Şablonunu Yükle",
+    exportTitle: "Dışa Aktarma Seçenekleri", exportDesc: "Web sitesi kodunuz hazır.", exportHtml: ".HTML Dosyası Olarak İndir",
+    pricingTitle: "Kredi Al", pricingDesc: "Bir kredi paketi seçin.", buyNotReady: "Ödeme sistemi henüz bağlı değil. Ödeme için sunucu (backend) entegrasyonu gerekir.",
+    loginTab: "Giriş Yap", email: "E-posta", password: "Şifre", fullName: "Ad Soyad", pwMin: "En az 6 karakter",
+    doLogin: "Giriş Yap", createAccount: "Hesap Oluştur (3 Ücretsiz Kredi)",
+    errFields: "Tüm alanları doldurun.", errEmail: "E-posta geçersiz.", errPw: "Şifre en az 6 karakter olmalı.",
+    errExists: "Bu e-posta zaten kayıtlı.", errCreds: "E-posta veya şifre yanlış."
+  },
+  en: {
+    demo: "Demo Templates", export: "Download Code", login: "Log in", register: "Sign up", credit: "Credits",
+    buyCredit: "Buy Credits / PRO", logout: "Log out",
+    promptTitle: "Website Prompt", catEcom: "E-commerce", catRest: "Restaurant", catServ: "Service",
+    promptPh: "Example: Create a modern landing page for an auto-service with a dark-orange theme and WhatsApp order button...",
+    gen: "Generate New Website", genBusy: "Preparing...", deploy: "Deploy to Web",
+    copilotTitle: "AI Co-Pilot (Live Edit)", copilotDesc: "Describe the changes you want to apply to the current site:",
+    copilotPh: "Example: Make background dark blue, add a pricing table...", copilotBtn: "Apply Co-Pilot",
+    copy: "Copy Code", exportModal: "Open Export Modal",
+    tabPreview: "Live Preview", tabCode: "Code Editor",
+    devDesktop: "Desktop", devTablet: "Tablet", devMobile: "Mobile",
+    loadingGen: "NKGen AI is Generating Website...", loadingCopilot: "Co-Pilot is Applying Changes...",
+    loadingHint: "Complex sites can take 1-2 minutes.", sec: "sec", cancel: "Cancel", close: "Close",
+    welcomeTitle: "NKGen AI Preview Center", welcomeDesc: "Type a prompt from the left panel or select a template to generate your website.",
+    welcomeStatus: "● System Ready & Waiting",
+    promptEcom: "Create a modern e-commerce site and product cards for clothing sales",
+    promptRest: "Create an online menu and ordering page for a restaurant",
+    promptServ: "Create a landing page and pricing table for service sales",
+    enterPrompt: "Please describe the website you want!",
+    enterCopilot: "Write an instruction for Co-Pilot!", noSite: "Generate a website first!",
+    needLogin: "Please log in or sign up to continue.",
+    noCredit: "You're out of credits! Buy a credit pack to continue.",
+    noKey: "Claude API key is not set. Put your key into the CLAUDE_API_KEY variable in the script section.",
+    genError: "An error occurred during generation: ", cancelled: "Cancelled. Your credit was refunded.",
+    timeout: "The request timed out. Your credit was refunded.", truncated: "Warning: the response hit the length limit, the site may be incomplete.",
+    emptyResp: "The API returned an empty response.", copied: "Website HTML copied!", copyFail: "Copy failed. Select the code in the editor manually.",
+    welcomeUser: "Welcome {name}! You got {n} free generation credits.", loggedOut: "Logged out.",
+    deployTitle: "Publish Website", deployDesc: "How would you like to publish your site?",
+    quickTitle: "Quick Free Link", quickSub: "Sub-domain (.netlify.app) + Free SSL",
+    customTitle: "Professional Domain (.com / .az)", customSub: "Download code and upload to cPanel/hosting",
+    quickAlert: "File downloaded! Drop it on the opened page (Netlify Drop) to get a free link instantly.",
+    customAlert: "index.html downloaded! To use it on your own domain, upload the file to your hosting's public_html folder and enable SSL.",
+    demoDesc: "Load a ready-made template in one click:", demoLoad: "Load Auto-Service Pro Template",
+    exportTitle: "Export Options", exportDesc: "Your website code is ready.", exportHtml: "Download as .HTML File",
+    pricingTitle: "Buy Credits", pricingDesc: "Choose a credit pack.", buyNotReady: "Payments are not connected yet. A server (backend) integration is required.",
+    loginTab: "Log in", email: "Email", password: "Password", fullName: "Full name", pwMin: "At least 6 characters",
+    doLogin: "Log in", createAccount: "Create Account (Get 3 Free Credits)",
+    errFields: "Fill in all fields.", errEmail: "Invalid email.", errPw: "Password must be at least 6 characters.",
+    errExists: "This email is already registered.", errCreds: "Wrong email or password."
+  }
+};
+
+let currentLang = localStorage.getItem('nkgen_lang') || 'az';
+if (!translations[currentLang]) currentLang = 'az';
+const T = (k) => translations[currentLang][k] || translations.az[k] || k;
+
+
+const $ = (id) => document.getElementById(id);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+let toastTimer = null;
+function toast(msg, type) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+}
+function openModal(id) { $(id).classList.add('show'); }
+function closeModal(id) { $(id).classList.remove('show'); }
+function closeAllModals() { $$('.modal-overlay').forEach(m => m.classList.remove('show')); }
+
+let currentHTMLCode = '';
+let isWelcomeScreen = true;
+let isBusy = false;
+let abortController = null;
+let timerInterval = null;
+let currentDevice = 'desktop';
+
+
+function loadUsers() { try { return JSON.parse(localStorage.getItem('nkgen_users')) || {}; } catch (e) { return {}; } }
+function saveUsers(u) { localStorage.setItem('nkgen_users', JSON.stringify(u)); }
+function getSessionEmail() { return localStorage.getItem('nkgen_session') || null; }
+function getCurrentUser() {
+    const email = getSessionEmail();
+    if (!email) return null;
+    const u = loadUsers()[email];
+    return u ? Object.assign({ email }, u) : null;
+}
+function updateUserCredits(delta) {
+    const email = getSessionEmail();
+    const users = loadUsers();
+    if (!email || !users[email]) return;
+    users[email].credits = Math.max(0, (users[email].credits || 0) + delta);
+    saveUsers(users);
+    updateUserUI();
+}
+async function hashPassword(pw) {
+    try {
+        if (window.crypto && crypto.subtle) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('nkgen:' + pw));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+    } catch (e) {}
+    let h = 5381; for (let i = 0; i < pw.length; i++) h = ((h << 5) + h + pw.charCodeAt(i)) | 0;
+    return 'f' + h;
+}
+function updateUserUI() {
+    const u = getCurrentUser();
+    $('authButtons').style.display = u ? 'none' : 'flex';
+    $('userProfile').style.display = u ? 'flex' : 'none';
+    if (u) {
+        $('userCredits').textContent = u.credits;
+        $('userNameDisplay').textContent = u.name;
+        $('userEmailDisplay').textContent = u.email;
+        $('userInitial').textContent = (u.name || 'U').charAt(0).toUpperCase();
+    }
+}
+function switchAuthTab(tab) {
+    const isLogin = tab === 'login';
+    $('loginForm').style.display = isLogin ? 'block' : 'none';
+    $('registerForm').style.display = isLogin ? 'none' : 'block';
+    $('tabLogin').classList.toggle('active', isLogin);
+    $('tabRegister').classList.toggle('active', !isLogin);
+    $('loginError').textContent = '';
+    $('registerError').textContent = '';
+}
+function openAuthModal(mode) { switchAuthTab(mode || 'login'); openModal('authModal'); }
+const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const name = $('regName').value.trim();
+    const email = $('regEmail').value.trim().toLowerCase();
+    const pw = $('regPassword').value;
+    const err = $('registerError');
+    if (!name || !email || !pw) { err.textContent = T('errFields'); return; }
+    if (!emailOk(email)) { err.textContent = T('errEmail'); return; }
+    if (pw.length < 6) { err.textContent = T('errPw'); return; }
+    const users = loadUsers();
+    if (users[email]) { err.textContent = T('errExists'); return; }
+    users[email] = { name, credits: FREE_CREDITS, pw: await hashPassword(pw) };
+    saveUsers(users);
+    localStorage.setItem('nkgen_session', email);
+    updateUserUI();
+    closeModal('authModal');
+    $('registerForm').reset();
+    toast(T('welcomeUser').replace('{name}', name).replace('{n}', FREE_CREDITS), 'success');
+}
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = $('loginEmail').value.trim().toLowerCase();
+    const pw = $('loginPassword').value;
+    const err = $('loginError');
+    if (!email || !pw) { err.textContent = T('errFields'); return; }
+    const users = loadUsers();
+    if (!users[email] || users[email].pw !== await hashPassword(pw)) { err.textContent = T('errCreds'); return; }
+    localStorage.setItem('nkgen_session', email);
+    updateUserUI();
+    closeModal('authModal');
+    $('loginForm').reset();
+}
+function logoutUser() {
+    localStorage.removeItem('nkgen_session');
+    $('userDropdown').classList.remove('show');
+    updateUserUI();
+    toast(T('loggedOut'));
+}
+
+function chargeCredits(cost) {
+    const u = getCurrentUser();
+    if (!u) { toast(T('needLogin'), 'error'); openAuthModal('login'); return false; }
+    if (cost > 0 && u.credits < cost) { toast(T('noCredit'), 'error'); openModal('pricingModal'); return false; }
+    if (cost > 0) updateUserCredits(-cost);
+    return true;
+}
+
+
+function buildPreviewDoc(code) {
+    const inject =
+        '<script>(function(){' +
+        'document.addEventListener("click",function(e){' +
+          'var btn=e.target.closest(".buy-btn,[data-item-id]");' +
+          'if(btn){e.preventDefault();var n=btn.getAttribute("data-item-name")||"Product";var p=btn.getAttribute("data-item-price")||"0.00";alert("Added to cart: "+n+" - "+p+" AZN\\n(Demo)");return;}' +
+          'var a=e.target.closest("a");if(!a)return;' +
+          'var h=a.getAttribute("href");' +
+          'if(!h||h==="#"){e.preventDefault();return;}' +
+          'if(h.charAt(0)==="#"){e.preventDefault();var t=null;try{t=document.querySelector(h);}catch(x){}if(t)t.scrollIntoView({behavior:"smooth"});return;}' +
+          'if(/^https?:\\/\\//i.test(h)){a.target="_blank";a.rel="noopener";return;}' +
+          'if(/^(mailto:|tel:)/i.test(h)){return;}' +
+          'e.preventDefault();' +
+        '},true);' +
+        'document.addEventListener("submit",function(e){e.preventDefault();alert("Demo form");},true);' +
+        '})();<' + '/script>';
+    if (/<\/body>/i.test(code)) return code.replace(/<\/body>/i, inject + '</body>');
+    return code + inject;
+}
+function updatePreview(code, fromEditor) {
+    currentHTMLCode = code;
+    const editor = $('codeEditorTextarea');
+    if (!fromEditor && editor.value !== code) editor.value = code;
+    $('livePreviewFrame').srcdoc = buildPreviewDoc(code);
+}
+function welcomeHTML() {
+    return '<!DOCTYPE html><html lang="' + currentLang + '"><head><meta charset="UTF-8"><style>' +
+    'body{margin:0;font-family:Segoe UI,sans-serif;background:#0f1016;color:#fff;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;overflow:hidden}' +
+    '.glow{position:absolute;width:300px;height:300px;background:rgba(255,107,0,.15);filter:blur(80px);border-radius:50%}' +
+    '.c{position:relative;z-index:2;max-width:450px;padding:30px}h2{font-size:26px;font-weight:700;margin-bottom:10px;color:#FF6B00}' +
+    'p{font-size:14px;color:#9ca3af;line-height:1.6;margin-bottom:25px}' +
+    '.b{display:inline-block;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:10px 20px;border-radius:30px;font-size:12px;color:#10B981}' +
+    '</style></head><body><div class="glow"></div><div class="c"><div style="font-size:50px;margin-bottom:20px">✨</div>' +
+    '<h2>' + T('welcomeTitle') + '</h2><p>' + T('welcomeDesc') + '</p><div class="b">' + T('welcomeStatus') + '</div></div></body></html>';
+}
+function showWelcome() { isWelcomeScreen = true; updatePreview(welcomeHTML()); }
+function setSite(code) { isWelcomeScreen = false; updatePreview(code); }
+
+
+function switchView(view) {
+    $$('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    $('panePreview').classList.toggle('active', view === 'preview');
+    $('paneCode').classList.toggle('active', view === 'code');
+    $('deviceSelectorWrapper').style.display = view === 'preview' ? 'flex' : 'none';
+}
+function setDevice(device) {
+    currentDevice = device;
+    $('livePreviewFrame').className = device;
+    $$('.device-btn').forEach(b => b.classList.toggle('active', b.dataset.device === device));
+}
+let editorDebounce = null;
+function onEditorInput(value) {
+    currentHTMLCode = value;
+    isWelcomeScreen = false;
+    clearTimeout(editorDebounce);
+    editorDebounce = setTimeout(() => updatePreview(value, true), 400);
+}
+
+
+function showLoading(state, textKey) {
+    const overlay = $('loadingOverlay');
+    overlay.classList.toggle('show', state);
+    clearInterval(timerInterval);
+    if (state) {
+        $('loadingMessageText').textContent = T(textKey || 'loadingGen');
+        let s = 0;
+        $('timerCount').textContent = 0;
+        timerInterval = setInterval(() => { s++; $('timerCount').textContent = s; }, 1000);
+    }
+}
+function setBusy(state) {
+    isBusy = state;
+    $('mainGenerateBtn').disabled = state;
+    $('btnCopilot').disabled = state;
+    $('btnGenText').textContent = state ? T('genBusy') : T('gen');
+}
+
+
+const SYSTEM_PROMPT =
+  "You are an expert front-end developer and web designer. Return ONLY one complete, raw, executable HTML document " +
+  "(starting with <!DOCTYPE html>) with all CSS and JavaScript inline. No markdown fences, no explanations. " +
+  "Make the design modern, responsive, polished, with real-looking copy in the language of the user's request. " +
+  "Use only external resources from public CDNs (Google Fonts, cdnjs, Font Awesome) and images from https://images.unsplash.com or inline SVG/CSS. " +
+  "CRITICAL: the site is shown in a preview iframe, so do NOT create multi-page sites or links that navigate away. " +
+  "All menu links must be in-page anchors (href='#about') pointing to existing section ids, or use JavaScript with preventDefault. " +
+  "Do not use localStorage/sessionStorage/cookies.";
+
+async function callClaude(userContent, signal) {
+    if (!CLAUDE_API_KEY || CLAUDE_API_KEY.indexOf('BURAYA') === 0) throw new Error('NO_KEY');
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: {
+            'content-type': 'application/json',
+            'x-api-key': CLAUDE_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: CLAUDE_MAX_TOKENS,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: userContent }]
+        })
+    });
+    let data = null;
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) {
+        const msg = data && data.error && data.error.message ? data.error.message : ('HTTP ' + res.status);
+        throw new Error(msg);
+    }
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    if (!text.trim()) throw new Error(T('emptyResp'));
+    return { text, truncated: data.stop_reason === 'max_tokens' };
+}
+function extractHTML(raw) {
+    let c = raw;
+    const m = raw.match(/```(?:html)?\s*([\s\S]*?)```/i);
+    if (m) c = m[1];
+    else c = raw.replace(/^\s*```(?:html)?/i, '').replace(/```\s*$/, '');
+    const i = c.search(/<!DOCTYPE|<html/i);
+    if (i > 0) c = c.slice(i);
+    const e = c.toLowerCase().lastIndexOf('</html>');
+    if (e !== -1) c = c.slice(0, e + 7);
+    return c.trim();
+}
+
+
+async function runAI(opts) {
+    if (isBusy) return;
+    if (!CLAUDE_API_KEY || CLAUDE_API_KEY.indexOf('BURAYA') === 0) { toast(T('noKey'), 'error'); return; }
+    if (!chargeCredits(opts.cost)) return;
+
+    setBusy(true);
+    showLoading(true, opts.loadingKey);
+    abortController = new AbortController();
+    const to = setTimeout(() => abortController.abort('timeout'), REQUEST_TIMEOUT_MS);
+    let userCancelled = false;
+    abortController.signal.addEventListener('abort', () => { userCancelled = abortController.signal.reason !== 'timeout'; });
+
+    try {
+        const { text, truncated } = await callClaude(opts.message, abortController.signal);
+        const html = extractHTML(text);
+        if (!/<html|<body|<div/i.test(html)) throw new Error(T('emptyResp'));
+        setSite(html);
+        switchView('preview');
+        if (truncated) toast(T('truncated'), 'error');
+    } catch (err) {
+        if (opts.cost > 0) updateUserCredits(opts.cost); // krediti geri qaytar
+        if (err.name === 'AbortError' || abortController.signal.aborted) {
+            toast(abortController.signal.reason === 'timeout' ? T('timeout') : T('cancelled'), 'error');
+        } else if (err.message === 'NO_KEY') {
+            toast(T('noKey'), 'error');
+        } else {
+            console.error(err);
+            toast(T('genError') + err.message, 'error');
+        }
+    } finally {
+        clearTimeout(to);
+        abortController = null;
+        showLoading(false);
+        setBusy(false);
+    }
+}
+
+function generateWebsite() {
+    const prompt = $('websitePrompt').value.trim();
+    if (!prompt) { toast(T('enterPrompt'), 'error'); return; }
+    runAI({ message: prompt, cost: GENERATE_COST, loadingKey: 'loadingGen' });
+}
+function runCopilotTransform() {
+    const instruction = $('copilotPrompt').value.trim();
+    if (!instruction) { toast(T('enterCopilot'), 'error'); return; }
+    if (isWelcomeScreen || !currentHTMLCode) { toast(T('noSite'), 'error'); return; }
+    runAI({
+        message: 'Here is the existing HTML document:\n\n' + currentHTMLCode +
+                 '\n\nApply this modification: "' + instruction + '".\nReturn ONLY the full updated HTML document (inline CSS and JS), no explanations.',
+        cost: COPILOT_COST,
+        loadingKey: 'loadingCopilot'
+    });
+}
+
+
+function downloadHTML(filename) {
+    const blob = new Blob([currentHTMLCode], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function hasSite() {
+    if (isWelcomeScreen || !currentHTMLCode) { toast(T('noSite'), 'error'); return false; }
+    return true;
+}
+function exportHTML() { if (hasSite()) downloadHTML('nkgen-website.html'); }
+async function copyCodeToClipboard() {
+    if (!hasSite()) return;
+    try {
+        await navigator.clipboard.writeText(currentHTMLCode);
+        toast(T('copied'), 'success');
+    } catch (e) {
+        const ta = $('codeEditorTextarea');
+        switchView('code'); ta.focus(); ta.select();
+        try { document.execCommand('copy'); toast(T('copied'), 'success'); } catch (e2) { toast(T('copyFail'), 'error'); }
+    }
+}
+function openDeployModal() { if (hasSite()) openModal('deployModal'); }
+function deployQuick() {
+    closeModal('deployModal');
+    downloadHTML('index.html');
+    toast(T('quickAlert'), 'success');
+    setTimeout(() => window.open('https://app.netlify.com/drop', '_blank', 'noopener'), 600);
+}
+function deployCustomDomain() {
+    closeModal('deployModal');
+    downloadHTML('index.html');
+    toast(T('customAlert'), 'success');
+}
+
+
+function demoTemplate() {
+    return '<!DOCTYPE html><html lang="az"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>Auto-Service Pro</title><style>' +
+    '*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Arial,sans-serif}html{scroll-behavior:smooth}' +
+    'body{background:#0d0d0d;color:#fff}nav{display:flex;justify-content:space-between;align-items:center;padding:18px 6%;background:#111;position:sticky;top:0}' +
+    'nav b{font-size:22px}nav b span{color:#ff6b00}nav a{color:#ccc;text-decoration:none;margin-left:22px;font-size:14px}nav a:hover{color:#ff6b00}' +
+    '.hero{padding:110px 6%;text-align:center;background:radial-gradient(circle at 50% 0,#3a1a00,#0d0d0d 70%)}' +
+    '.hero h1{font-size:clamp(32px,6vw,58px);margin-bottom:16px}.hero h1 span{color:#ff6b00}.hero p{color:#aaa;max-width:560px;margin:0 auto 28px;line-height:1.7}' +
+    '.btn{display:inline-block;background:#ff6b00;color:#fff;padding:14px 30px;border-radius:30px;text-decoration:none;font-weight:700}' +
+    'section{padding:70px 6%}h2{text-align:center;font-size:30px;margin-bottom:36px}' +
+    '.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}' +
+    '.card{background:#181818;border:1px solid #2a2a2a;border-radius:14px;padding:26px}.card h3{color:#ff6b00;margin-bottom:8px}.card p{color:#aaa;font-size:14px;line-height:1.6}' +
+    '.price{font-size:30px;font-weight:800;margin:10px 0}footer{text-align:center;padding:28px;color:#777;border-top:1px solid #222;font-size:13px}' +
+    '</style></head><body>' +
+    '<nav><b>Auto<span>Service</span> Pro</b><div><a href="#services">Xidmətlər</a><a href="#prices">Qiymətlər</a><a href="#contact">Əlaqə</a></div></nav>' +
+    '<div class="hero"><h1>Avtomobiliniz <span>Peşəkar Əllərdə</span></h1><p>Diaqnostika, mühərrik təmiri, yağ dəyişimi və daha çoxu — sürətli, keyfiyyətli və zəmanətli.</p><a class="btn" href="#contact">WhatsApp ilə yazın</a></div>' +
+    '<section id="services"><h2>Xidmətlərimiz</h2><div class="grid">' +
+    '<div class="card"><h3>Kompüter diaqnostika</h3><p>Bütün markalar üçün dəqiq xəta analizi.</p></div>' +
+    '<div class="card"><h3>Mühərrik təmiri</h3><p>Təcrübəli ustalar və orijinal ehtiyat hissələri.</p></div>' +
+    '<div class="card"><h3>Yağ və filtr</h3><p>15 dəqiqəyə yağ və filtr dəyişimi.</p></div>' +
+    '<div class="card"><h3>Təkər və balans</h3><p>Montaj, balans və düzləndirmə.</p></div></div></section>' +
+    '<section id="prices"><h2>Qiymətlər</h2><div class="grid">' +
+    '<div class="card"><h3>Baza</h3><div class="price">29 AZN</div><p>Diaqnostika + yoxlama</p></div>' +
+    '<div class="card"><h3>Standart</h3><div class="price">79 AZN</div><p>Yağ, filtr, tormoz yoxlanışı</p></div>' +
+    '<div class="card"><h3>Premium</h3><div class="price">149 AZN</div><p>Tam texniki baxış + zəmanət</p></div></div></section>' +
+    '<section id="contact" style="text-align:center"><h2>Əlaqə</h2><p style="color:#aaa;margin-bottom:22px">Bakı, Azərbaycan · +994 50 000 00 00</p><a class="btn" href="https://wa.me/994500000000">WhatsApp</a></section>' +
+    '<footer>© 2026 AutoService Pro</footer></body></html>';
+}
+
+
+function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('nkgen_lang', lang);
+    document.documentElement.lang = lang;
+    $$('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+    $$('[data-i18n-ph]').forEach(el => { el.placeholder = T(el.dataset.i18nPh); });
+    $('btnGenText').textContent = isBusy ? T('genBusy') : T('gen');
+    if (isBusy) $('loadingMessageText').textContent = T('loadingGen');
+    if (isWelcomeScreen) showWelcome();
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    $('langSelector').value = currentLang;
+    $('langSelector').addEventListener('change', (e) => applyLanguage(e.target.value));
+
+    $('mainGenerateBtn').addEventListener('click', generateWebsite);
+    $('btnCopilot').addEventListener('click', runCopilotTransform);
+    $('btnCancelGen').addEventListener('click', () => { if (abortController) abortController.abort('user'); });
+
+    $('websitePrompt').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); generateWebsite(); }
+    });
+
+    $$('.chip').forEach(ch => ch.addEventListener('click', () => { $('websitePrompt').value = T(ch.dataset.prompt); }));
+    $$('.view-btn').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
+    $$('.device-btn').forEach(b => b.addEventListener('click', () => setDevice(b.dataset.device)));
+    $('codeEditorTextarea').addEventListener('input', (e) => onEditorInput(e.target.value));
+
+    $('btnDemo').addEventListener('click', () => openModal('demoModal'));
+    $('btnLoadDemo').addEventListener('click', () => { setSite(demoTemplate()); closeModal('demoModal'); switchView('preview'); });
+    $('btnExportTop').addEventListener('click', exportHTML);
+    $('btnExportModal').addEventListener('click', () => { if (hasSite()) openModal('exportModal'); });
+    $('btnExportFile').addEventListener('click', () => { exportHTML(); closeModal('exportModal'); });
+    $('btnExportCopy').addEventListener('click', () => { copyCodeToClipboard(); closeModal('exportModal'); });
+    $('btnCopy').addEventListener('click', copyCodeToClipboard);
+
+    $('btnDeploy').addEventListener('click', openDeployModal);
+    $('choiceQuick').addEventListener('click', deployQuick);
+    $('choiceCustom').addEventListener('click', deployCustomDomain);
+
+    $('btnOpenLogin').addEventListener('click', () => openAuthModal('login'));
+    $('btnOpenRegister').addEventListener('click', () => openAuthModal('register'));
+    $('tabLogin').addEventListener('click', () => switchAuthTab('login'));
+    $('tabRegister').addEventListener('click', () => switchAuthTab('register'));
+    $('loginForm').addEventListener('submit', handleLogin);
+    $('registerForm').addEventListener('submit', handleRegister);
+
+    $('userAvatar').addEventListener('click', (e) => { e.stopPropagation(); $('userDropdown').classList.toggle('show'); });
+    $('btnBuyCredit').addEventListener('click', () => { $('userDropdown').classList.remove('show'); openModal('pricingModal'); });
+    $('btnLogout').addEventListener('click', logoutUser);
+    $$('[data-buy]').forEach(b => b.addEventListener('click', () => toast(T('buyNotReady'), 'error')));
+
+    $$('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+    $$('.modal-overlay').forEach(m => m.addEventListener('mousedown', (e) => { if (e.target === m) m.classList.remove('show'); }));
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#userProfile')) $('userDropdown').classList.remove('show');
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAllModals(); $('userDropdown').classList.remove('show'); } });
+
+    applyLanguage(currentLang);
+    updateUserUI();
+    showWelcome();
+});
+</script>
+</body>
+</html>
